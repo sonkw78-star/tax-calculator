@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>종합소득세 모의 계산기 v2 (보험설계사용)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: #f5f7fa;
+    color: #2c3e50;
+    padding: 20px;
+    line-height: 1.6;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    color: #1a365d;
+    margin-bottom: 8px;
+    font-size: 24px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #718096;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .right-col { position: static !important; }
+  }
+  .right-col {
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 14px;
+  }
+  .card h2 {
+    font-size: 15px;
+    color: #2d3748;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #4299e1;
+  }
+  .input-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+  .input-row label {
+    flex: 1;
+    font-size: 12.5px;
+    color: #4a5568;
+  }
+  .input-row input[type="text"] {
+    width: 140px;
+    padding: 6px 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: right;
+    font-family: inherit;
+  }
+  .input-row input[type="number"] {
+    width: 80px;
+    padding: 6px 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: right;
+  }
+  .input-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+  .input-row input:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 2px rgba(66,153,225,0.2);
+  }
+  .input-row select {
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+    font-size: 12px;
+  }
+  .unit { font-size: 11px; color: #718096; }
+  .section-title {
+    font-size: 12px;
+    color: #2c5282;
+    font-weight: 600;
+    margin: 10px 0 6px;
+    padding: 4px 8px;
+    background: #ebf8ff;
+    border-radius: 4px;
+  }
+  .total-input {
+    background: #fef5e7 !important;
+    border: 1px solid #f6ad55 !important;
+    font-weight: 600;
+    color: #c05621 !important;
+  }
+  .auto-sum {
+    background: #e6fffa;
+    border: 1px solid #38b2ac;
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    color: #234e52;
+    font-size: 13px;
+  }
+  .calc-btn-wrap {
+    text-align: center;
+    margin: 16px 0;
+    padding: 12px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .calc-btn {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    color: #fff;
+    border: none;
+    padding: 12px 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(56,161,105,0.3);
+  }
+  .calc-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(56,161,105,0.4); }
+  .preset-btn {
+    background: #4299e1;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    margin: 0 4px;
+  }
+  .preset-btn:hover { background: #3182ce; }
+  .preset-btn.reset { background: #a0aec0; }
+
+  .result-card {
+    background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+    color: #fff;
+  }
+  .result-card h2 { color: #fff; border-bottom-color: #63b3ed; }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    font-size: 13.5px;
+  }
+  .result-row.minus { color: #fbd38d; }
+  .result-row.plus { color: #9ae6b4; }
+  .result-row.total {
+    font-weight: bold;
+    font-size: 14.5px;
+    background: rgba(255,255,255,0.1);
+    padding: 9px 10px;
+    border-radius: 6px;
+    margin: 6px 0;
+  }
+  .result-final {
+    font-weight: bold;
+    font-size: 18px;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    text-align: center;
+    background: #4a5568;
+  }
+  .result-final.refund { background: #38a169; }
+  .result-final.pay { background: #c53030; }
+  .help { font-size: 11px; color: #a0aec0; margin-top: 4px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    background: #fef5e7;
+    color: #c05621;
+    margin-left: 4px;
+  }
+
+  /* 세율표 */
+  .rate-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 11.5px;
+  }
+  .rate-table th, .rate-table td {
+    padding: 5px 6px;
+    border: 1px solid rgba(255,255,255,0.2);
+    text-align: right;
+    color: #fff;
+  }
+  .rate-table th {
+    background: rgba(255,255,255,0.15);
+    text-align: center;
+    font-weight: 600;
+  }
+  .rate-table tr.active {
+    background: rgba(251, 211, 141, 0.3);
+    font-weight: bold;
+  }
+  .rate-table td:first-child { text-align: left; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #a0aec0;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧮 종합소득세 모의 계산기 v2</h1>
+  <p class="subtitle">보험설계사용 · 2025년 귀속소득 (2026년 5월 신고)</p>
+
+  <div class="calc-btn-wrap">
+    <button class="preset-btn" onclick="loadPreset('sample')">📋 예시값 불러오기</button>
+    <button class="preset-btn reset" onclick="loadPreset('reset')">🔄 초기화</button>
+    <button class="calc-btn" onclick="calculate()">🧮 계산하기</button>
+  </div>
+
+  <div class="layout">
+    <!-- 좌측: 입력 -->
+    <div class="left-col">
+      <!-- 수입 -->
+      <div class="card">
+        <h2>① 수입금액</h2>
+        <div class="input-row">
+          <label>주 수입금액 (소속회사 / 3.3% 공제 전)</label>
+          <input type="text" id="revenue_main" class="money" value="150,000,000">
+          <span class="unit">원</span>
+        </div>
+        <div class="input-row">
+          <label>추가 수입금액 (기타 사업수입)</label>
+          <input type="text" id="revenue_add" class="money" value="0">
+          <span class="unit">원</span>
+        </div>
+        <div class="input-row">
+          <label>기납부세액 (원천징수 3.3%)</label>
+          <input type="text" id="prepaid" class="money" value="4,950,000">
+          <span class="unit">원</span>
+        </div>
+        <div class="auto-sum">
+          <span>총수입금액 합계</span>
+          <span id="sum_revenue">150,000,000원</span>
+        </div>
+      </div>
+
+      <!-- 필요경비 -->
+      <div class="card">
+        <h2>② 필요경비</h2>
+
+        <div class="section-title">📌 사업용 비용 총액 (간편 입력)</div>
+        <div class="input-row">
+          <label>총액으로 입력 (세부항목 미작성 시)</label>
+          <input type="text" id="exp_total_lump" class="money total-input" value="0">
+          <span class="unit">원</span>
+        </div>
+
+        <div class="section-title">📋 세부 항목별 입력 (선택)</div>
+        <div class="input-row">
+          <label>인건비 (직원급여+4대보험회사부담)</label>
+          <input type="text" id="exp_labor" class="money" value="0">
+        </div>
+        <div class="input-row">
+          <label>지급수수료 (세무·DB·리쿠르팅)</label>
+          <input type="text" id="exp_fee" class="money" value="3,000,000">
+        </div>
+        <div class="input-row">
+          <label>업무추진비 / 접대비</label>
+          <input type="text" id="exp_ent" class="money" value="15,000,000">
+        </div>
+        <div class="input-row">
+          <label>판매관리비 · 판촉비</label>
+          <input type="text" id="exp_sales" class="money" value="12,000,000">
+        </div>
+        <div class="input-row">
+          <label>차량유지비 (유류·보험·수리)</label>
+          <input type="text" id="exp_car" class="money" value="10,000,000">
+        </div>
+        <div class="input-row">
+          <label>여비교통비</label>
+          <input type="text" id="exp_travel" class="money" value="5,000,000">
+        </div>
+        <div class="input-row">
+          <label>통신비</label>
+          <input type="text" id="exp_comm" class="money" value="2,000,000">
+        </div>
+        <div class="input-row">
+          <label>소모품 · 사무용품</label>
+          <input type="text" id="exp_supply" class="money" value="3,000,000">
+        </div>
+        <div class="input-row">
+          <label>교육훈련비 · 도서인쇄비</label>
+          <input type="text" id="exp_edu" class="money" value="4,000,000">
+        </div>
+        <div class="input-row">
+          <label>임차료 · 수도광열비</label>
+          <input type="text" id="exp_rent" class="money" value="6,000,000">
+        </div>
+        <div class="input-row">
+          <label>복리후생비 · 회의비</label>
+          <input type="text" id="exp_welfare" class="money" value="5,000,000">
+        </div>
+        <div class="input-row">
+          <label>광고선전비</label>
+          <input type="text" id="exp_ad" class="money" value="3,000,000">
+        </div>
+        <div class="input-row">
+          <label>건강보험료 본인부담분 <span class="badge">필요경비</span></label>
+          <input type="text" id="exp_health" class="money" value="6,000,000">
+        </div>
+        <div class="input-row">
+          <label>기타 (세금과공과·보험료 등)</label>
+          <input type="text" id="exp_etc" class="money" value="6,000,000">
+        </div>
+
+        <div class="auto-sum">
+          <span>필요경비 합계 (총액 + 세부 합산)</span>
+          <span id="sum_expense">80,000,000원</span>
+        </div>
+        <p class="help">💡 '총액 입력란'과 '세부 항목'은 모두 합산됩니다. 둘 중 하나만 사용하거나, 일부는 세부+일부는 총액으로 분리 입력 가능합니다.</p>
+      </div>
+
+      <!-- 소득공제 -->
+      <div class="card">
+        <h2>③ 소득공제</h2>
+        <div class="section-title">인적공제 (1인당 150만원)</div>
+        <div class="input-row">
+          <label>본인</label>
+          <input type="checkbox" id="ded_self" checked>
+        </div>
+        <div class="input-row">
+          <label>배우자 (소득없음)</label>
+          <input type="checkbox" id="ded_spouse" checked>
+        </div>
+        <div class="input-row">
+          <label>자녀 수 (만 20세 이하)</label>
+          <input type="number" id="ded_child" value="2" min="0" max="10">
+          <span class="unit">명</span>
+        </div>
+        <div class="input-row">
+          <label>직계존속 (60세 이상, 소득없음)</label>
+          <input type="number" id="ded_parent" value="1" min="0" max="10">
+          <span class="unit">명</span>
+        </div>
+        <div class="section-title">추가공제</div>
+        <div class="input-row">
+          <label>경로우대 (70세 이상)</label>
+          <input type="number" id="ded_old" value="0" min="0" max="10">
+          <span class="unit">명 × 100만</span>
+        </div>
+        <div class="input-row">
+          <label>장애인</label>
+          <input type="number" id="ded_disabled" value="0" min="0" max="10">
+          <span class="unit">명 × 200만</span>
+        </div>
+        <div class="input-row">
+          <label>한부모</label>
+          <input type="checkbox" id="ded_single">
+          <span class="unit">100만</span>
+        </div>
+        <div class="section-title">연금 · 보험료 공제</div>
+        <div class="input-row">
+          <label>국민연금 본인납부액</label>
+          <input type="text" id="ded_pension" class="money" value="6,000,000">
+          <span class="unit">원</span>
+        </div>
+      </div>
+
+      <!-- 세액공제 -->
+      <div class="card">
+        <h2>④ 세액공제</h2>
+        <div class="input-row">
+          <label>자녀세액공제 (8세이상 자녀수)</label>
+          <input type="number" id="tax_child" value="0" min="0" max="10">
+          <span class="unit">명</span>
+        </div>
+        <p class="help">첫째 25만 / 둘째 25만 / 셋째이상 각 40만</p>
+        <div class="input-row" style="margin-top:8px;">
+          <label>출산 · 입양 (당해연도 출생)</label>
+          <select id="tax_birth">
+            <option value="0">해당없음</option>
+            <option value="300000">첫째 30만원</option>
+            <option value="500000" selected>둘째 50만원</option>
+            <option value="700000">셋째이상 70만원</option>
+          </select>
+        </div>
+        <div class="input-row">
+          <label>연금저축 납입액 (한도 600만)</label>
+          <input type="text" id="tax_pension_save" class="money" value="6,000,000">
+          <span class="unit">원</span>
+        </div>
+        <p class="help">종합소득 4,500만 초과 12% / 이하 15%</p>
+        <div class="input-row" style="margin-top:8px;">
+          <label>표준세액공제 (사업소득자 7만)</label>
+          <input type="checkbox" id="tax_standard" checked>
+        </div>
+      </div>
+    </div>
+
+    <!-- 우측: 결과 (sticky) -->
+    <div class="right-col">
+      <!-- 산출결과 -->
+      <div class="card result-card">
+        <h2>📊 산출 결과</h2>
+        <div id="result_content">
+          <div class="empty-state" style="color:rgba(255,255,255,0.7);">
+            👆 좌측에서 값을 입력하고<br>
+            <strong>「계산하기」</strong> 버튼을 눌러주세요
+          </div>
+        </div>
+      </div>
+
+      <!-- 종합소득세율표 -->
+      <div class="card result-card">
+        <h2>📋 종합소득세율표 (2025년 귀속)</h2>
+        <table class="rate-table" id="rate_table">
+          <thead>
+            <tr>
+              <th>과세표준</th>
+              <th>세율</th>
+              <th>누진공제</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-min="0" data-max="14000000">
+              <td>1,400만 이하</td><td>6%</td><td>-</td>
+            </tr>
+            <tr data-min="14000000" data-max="50000000">
+              <td>1,400만~5,000만</td><td>15%</td><td>126만</td>
+            </tr>
+            <tr data-min="50000000" data-max="88000000">
+              <td>5,000만~8,800만</td><td>24%</td><td>576만</td>
+            </tr>
+            <tr data-min="88000000" data-max="150000000">
+              <td>8,800만~1.5억</td><td>35%</td><td>1,544만</td>
+            </tr>
+            <tr data-min="150000000" data-max="300000000">
+              <td>1.5억~3억</td><td>38%</td><td>1,994만</td>
+            </tr>
+            <tr data-min="300000000" data-max="500000000">
+              <td>3억~5억</td><td>40%</td><td>2,594만</td>
+            </tr>
+            <tr data-min="500000000" data-max="1000000000">
+              <td>5억~10억</td><td>42%</td><td>3,594만</td>
+            </tr>
+            <tr data-min="1000000000" data-max="999999999999">
+              <td>10억 초과</td><td>45%</td><td>6,594만</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="help" style="margin-top:8px;">💡 계산 후 적용 구간이 노란색으로 표시됩니다.</p>
+      </div>
+
+      <!-- 11월 건보·국민연금 예상 -->
+      <div class="card">
+        <h2>🏥 지역가입자 4대보험 예상 (월)</h2>
+        <div class="input-row">
+          <label>건강보험 소득요율</label>
+          <span><strong>7.09%</strong></span>
+        </div>
+        <div class="input-row">
+          <label>장기요양 (건보 × )</label>
+          <span><strong>12.95%</strong></span>
+        </div>
+        <div class="input-row">
+          <label>국민연금 요율</label>
+          <span><strong>9.0%</strong></span>
+        </div>
+        <hr style="margin:10px 0; border:none; border-top:1px dashed #cbd5e0;">
+        <div id="insurance_result">
+          <div class="empty-state">계산하기 버튼을 눌러주세요</div>
+        </div>
+        <p class="help" style="margin-top:8px;">※ 신고소득 기준으로 다음해 11월부터 1년간 반영</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 콤마 표시 함수
+function addComma(str) {
+  if (!str) return '0';
+  const num = str.toString().replace(/[^0-9]/g, '');
+  if (!num) return '0';
+  return parseInt(num).toLocaleString('ko-KR');
+}
+
+function removeComma(str) {
+  if (!str) return 0;
+  return parseInt(str.toString().replace(/[^0-9]/g, '')) || 0;
+}
+
+// 모든 .money 인풋에 콤마 자동 적용
+document.querySelectorAll('input.money').forEach(input => {
+  // 초기값에 콤마 적용
+  if (input.value) input.value = addComma(input.value);
+
+  input.addEventListener('input', function(e) {
+    const cursorPos = this.selectionStart;
+    const oldLength = this.value.length;
+    this.value = addComma(this.value);
+    const newLength = this.value.length;
+    // 커서 위치 보정
+    this.setSelectionRange(cursorPos + (newLength - oldLength), cursorPos + (newLength - oldLength));
+  });
+
+  // 실시간 합산 (수입/필요경비만)
+  input.addEventListener('input', updateSums);
+});
+
+function val(id) {
+  const el = document.getElementById(id);
+  if (!el) return 0;
+  if (el.type === 'checkbox') return el.checked ? 1 : 0;
+  if (el.classList.contains('money')) return removeComma(el.value);
+  return parseFloat(el.value) || 0;
+}
+
+function fmt(n) {
+  return Math.round(n).toLocaleString('ko-KR') + '원';
+}
+
+// 입력 시 합계만 실시간 업데이트 (다른 계산은 버튼으로)
+function updateSums() {
+  // 수입 합계
+  const revenueTotal = val('revenue_main') + val('revenue_add');
+  document.getElementById('sum_revenue').textContent = fmt(revenueTotal);
+
+  // 필요경비 합계
+  const expIds = ['exp_total_lump','exp_labor','exp_fee','exp_ent','exp_sales','exp_car',
+                  'exp_travel','exp_comm','exp_supply','exp_edu','exp_rent','exp_welfare',
+                  'exp_ad','exp_health','exp_etc'];
+  const expTotal = expIds.reduce((s, id) => s + val(id), 0);
+  document.getElementById('sum_expense').textContent = fmt(expTotal);
+}
+
+function calculate() {
+  // ① 수입
+  const revenue = val('revenue_main') + val('revenue_add');
+  const prepaid = val('prepaid');
+
+  // ② 필요경비 (총액 + 세부)
+  const expIds = ['exp_total_lump','exp_labor','exp_fee','exp_ent','exp_sales','exp_car',
+                  'exp_travel','exp_comm','exp_supply','exp_edu','exp_rent','exp_welfare',
+                  'exp_ad','exp_health','exp_etc'];
+  const totalExpense = expIds.reduce((s, id) => s + val(id), 0);
+
+  // ③ 사업소득금액
+  const businessIncome = revenue - totalExpense;
+
+  // ④ 인적공제
+  const basicCount = val('ded_self') + val('ded_spouse') + val('ded_child') + val('ded_parent');
+  const basicDed = basicCount * 1500000;
+  const addDed = val('ded_old') * 1000000 + val('ded_disabled') * 2000000 + val('ded_single') * 1000000;
+  const personalDed = basicDed + addDed;
+
+  // ⑤ 연금보험료공제
+  const pensionDed = val('ded_pension');
+
+  // ⑥ 과세표준
+  const taxBase = Math.max(0, businessIncome - personalDed - pensionDed);
+
+  // ⑦ 산출세액
+  let tax = 0;
+  let rateInfo = '';
+  let activeRow = -1;
+  if (taxBase <= 14000000) {
+    tax = taxBase * 0.06; rateInfo = '6%'; activeRow = 0;
+  } else if (taxBase <= 50000000) {
+    tax = taxBase * 0.15 - 1260000; rateInfo = '15% (-126만)'; activeRow = 1;
+  } else if (taxBase <= 88000000) {
+    tax = taxBase * 0.24 - 5760000; rateInfo = '24% (-576만)'; activeRow = 2;
+  } else if (taxBase <= 150000000) {
+    tax = taxBase * 0.35 - 15440000; rateInfo = '35% (-1,544만)'; activeRow = 3;
+  } else if (taxBase <= 300000000) {
+    tax = taxBase * 0.38 - 19940000; rateInfo = '38% (-1,994만)'; activeRow = 4;
+  } else if (taxBase <= 500000000) {
+    tax = taxBase * 0.40 - 25940000; rateInfo = '40% (-2,594만)'; activeRow = 5;
+  } else if (taxBase <= 1000000000) {
+    tax = taxBase * 0.42 - 35940000; rateInfo = '42% (-3,594만)'; activeRow = 6;
+  } else {
+    tax = taxBase * 0.45 - 65940000; rateInfo = '45% (-6,594만)'; activeRow = 7;
+  }
+  tax = Math.max(0, tax);
+
+  // 세율표 활성행 표시
+  const rows = document.querySelectorAll('#rate_table tbody tr');
+  rows.forEach((r, i) => r.classList.toggle('active', i === activeRow));
+
+  // ⑧ 세액공제
+  const childN = val('tax_child');
+  let childCredit = 0;
+  if (childN >= 1) childCredit += 250000;
+  if (childN >= 2) childCredit += 250000;
+  if (childN >= 3) childCredit += (childN - 2) * 400000;
+
+  const birthCredit = parseFloat(document.getElementById('tax_birth').value) || 0;
+
+  const pensionSave = Math.min(val('tax_pension_save'), 6000000);
+  const pensionRate = businessIncome <= 45000000 ? 0.15 : 0.12;
+  const pensionCredit = pensionSave * pensionRate;
+
+  const stdCredit = val('tax_standard') * 70000;
+
+  const totalCredit = childCredit + birthCredit + pensionCredit + stdCredit;
+  const decidedTax = Math.max(0, tax - totalCredit);
+
+  // ⑨ 납부/환급
+  const finalAmount = decidedTax - prepaid;
+  const effRate = revenue > 0 ? (decidedTax / revenue * 100).toFixed(2) : 0;
+  const costRate = revenue > 0 ? (totalExpense / revenue * 100).toFixed(1) : 0;
+
+  // 결과 HTML 구성
+  let finalHTML = '';
+  if (finalAmount > 0) {
+    finalHTML = `<div class="result-final pay">💸 추가 납부: ${fmt(finalAmount)}</div>`;
+  } else if (finalAmount < 0) {
+    finalHTML = `<div class="result-final refund">💰 환급: ${fmt(Math.abs(finalAmount))}</div>`;
+  } else {
+    finalHTML = `<div class="result-final">납부/환급액 0원</div>`;
+  }
+
+  document.getElementById('result_content').innerHTML = `
+    <div class="result-row"><span>① 총수입금액</span><span>${fmt(revenue)}</span></div>
+    <div class="result-row minus"><span>② 필요경비 합계</span><span>-${fmt(totalExpense)}</span></div>
+    <div class="result-row total"><span>③ 사업소득금액</span><span>${fmt(businessIncome)}</span></div>
+
+    <div class="result-row minus"><span>④ 인적공제 (${basicCount}명)</span><span>-${fmt(personalDed)}</span></div>
+    <div class="result-row minus"><span>⑤ 연금보험료공제</span><span>-${fmt(pensionDed)}</span></div>
+    <div class="result-row total"><span>⑥ 과세표준</span><span>${fmt(taxBase)}</span></div>
+
+    <div class="result-row"><span>⑦ 적용세율</span><span>${rateInfo}</span></div>
+    <div class="result-row total"><span>⑧ 산출세액</span><span>${fmt(tax)}</span></div>
+
+    <div class="result-row minus"><span>⑨ 자녀세액공제</span><span>-${fmt(childCredit)}</span></div>
+    <div class="result-row minus"><span>⑩ 출산·입양공제</span><span>-${fmt(birthCredit)}</span></div>
+    <div class="result-row minus"><span>⑪ 연금저축공제 (${pensionRate*100}%)</span><span>-${fmt(pensionCredit)}</span></div>
+    <div class="result-row minus"><span>⑫ 표준세액공제</span><span>-${fmt(stdCredit)}</span></div>
+    <div class="result-row total"><span>⑬ 결정세액</span><span>${fmt(decidedTax)}</span></div>
+
+    <div class="result-row plus"><span>⑭ 기납부세액 (3.3%)</span><span>-${fmt(prepaid)}</span></div>
+
+    ${finalHTML}
+
+    <div style="margin-top:14px; padding:10px; background:rgba(255,255,255,0.1); border-radius:6px; font-size:12px;">
+      <strong>💡 실효세율:</strong> ${effRate}%<br>
+      <strong>📌 비용률:</strong> ${costRate}%
+    </div>
+  `;
+
+  // 4대보험
+  const monthly = Math.max(0, businessIncome / 12);
+  const healthFee = monthly * 0.0709;
+  const careFee = healthFee * 0.1295;
+  const npBase = Math.min(monthly, 6370000);
+  const npFee = npBase * 0.09;
+  const totalIns = healthFee + careFee + npFee;
+
+  document.getElementById('insurance_result').innerHTML = `
+    <div class="result-row" style="color:#2c5282;"><span>월 소득 (사업소득 ÷ 12)</span><span>${fmt(monthly)}</span></div>
+    <div class="result-row" style="color:#2c5282;"><span>건강보험료 (소득분)</span><span>${fmt(healthFee)}</span></div>
+    <div class="result-row" style="color:#2c5282;"><span>장기요양보험료</span><span>${fmt(careFee)}</span></div>
+    <div class="result-row" style="color:#2c5282;"><span>국민연금 (상한 637만)</span><span>${fmt(npFee)}</span></div>
+    <div style="background:#ebf8ff; color:#2c5282; padding:10px; border-radius:6px; margin-top:8px; display:flex; justify-content:space-between; font-weight:bold;">
+      <span>월 합계 (재산보험료 별도)</span><span>${fmt(totalIns)}</span>
+    </div>
+  `;
+}
+
+function setMoney(id, value) {
+  document.getElementById(id).value = addComma(value.toString());
+}
+
+function loadPreset(type) {
+  if (type === 'reset') {
+    document.querySelectorAll('input.money').forEach(el => el.value = '0');
+    document.querySelectorAll('input[type="number"]').forEach(el => el.value = 0);
+    document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+    document.getElementById('tax_birth').value = '0';
+    updateSums();
+    document.getElementById('result_content').innerHTML = `
+      <div class="empty-state" style="color:rgba(255,255,255,0.7);">
+        👆 좌측에서 값을 입력하고<br><strong>「계산하기」</strong> 버튼을 눌러주세요
+      </div>`;
+    document.getElementById('insurance_result').innerHTML = `<div class="empty-state">계산하기 버튼을 눌러주세요</div>`;
+    document.querySelectorAll('#rate_table tbody tr').forEach(r => r.classList.remove('active'));
+  } else if (type === 'sample') {
+    setMoney('revenue_main', 150000000);
+    setMoney('revenue_add', 0);
+    setMoney('prepaid', 4950000);
+    setMoney('exp_total_lump', 0);
+    setMoney('exp_labor', 0);
+    setMoney('exp_fee', 3000000);
+    setMoney('exp_ent', 15000000);
+    setMoney('exp_sales', 12000000);
+    setMoney('exp_car', 10000000);
+    setMoney('exp_travel', 5000000);
+    setMoney('exp_comm', 2000000);
+    setMoney('exp_supply', 3000000);
+    setMoney('exp_edu', 4000000);
+    setMoney('exp_rent', 6000000);
+    setMoney('exp_welfare', 5000000);
+    setMoney('exp_ad', 3000000);
+    setMoney('exp_health', 6000000);
+    setMoney('exp_etc', 6000000);
+    document.getElementById('ded_self').checked = true;
+    document.getElementById('ded_spouse').checked = true;
+    document.getElementById('ded_child').value = 2;
+    document.getElementById('ded_parent').value = 1;
+    document.getElementById('ded_old').value = 0;
+    document.getElementById('ded_disabled').value = 0;
+    document.getElementById('ded_single').checked = false;
+    setMoney('ded_pension', 6000000);
+    document.getElementById('tax_child').value = 0;
+    document.getElementById('tax_birth').value = '500000';
+    setMoney('tax_pension_save', 6000000);
+    document.getElementById('tax_standard').checked = true;
+    updateSums();
+  }
+}
+
+// 초기 합계 표시
+updateSums();
+</script>
+</body>
+</html>
